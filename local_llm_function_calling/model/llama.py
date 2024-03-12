@@ -31,7 +31,6 @@ class LogitLlama(Llama):
         Yields:
             The token logits, expecting the next token(s) in return.
         """
-        print(tokens)
         assert self.ctx is not None
         if reset and len(self._input_ids) > 0:
             longest_prefix = 0
