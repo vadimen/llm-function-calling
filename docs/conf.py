@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'local-llm-function-calling'
-copyright = '2023, rizerphe'
+copyright = '2024, rizerphe'
 author = 'rizerphe'
 
 # -- General configuration ---------------------------------------------------
