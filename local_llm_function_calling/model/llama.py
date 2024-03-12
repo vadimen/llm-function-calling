@@ -59,7 +59,7 @@ class LogitLlama(Llama):
                 break
 
 
-class CodeLlamaFc(LogitLlama):
+class CodeLlamaFc:
     """A prompter for code llama function calling models"""
 
     def function_descriptions(

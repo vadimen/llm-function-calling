@@ -87,3 +87,48 @@ generator = Generator(
     ),
 )
 ```
+
+<details><summary>I've started working on integrating this with my own finetuned models, as well as hopefully more in the future - feel free to submit an issue to the github if you want to see your favorite function calling model integrated.</summary>
+
+The prompters are available at [local_llm_function_calling.prompters](local_llm_function_calling.prompters). You can also easily write your own - it just has to implement the same [local_llm_function_calling.TextPrompter](local_llm_function_calling.TextPrompter) protocol for your model type. Here's how to use one, with [my own finetuned model](https://huggingface.co/rizerphe/CodeLlama-function-calling-6320-7b-Instruct-GGUF):
+
+```py
+from local_llm_function_calling import Generator
+from local_llm_function_calling.model.llama import LlamaModel
+from local_llm_function_calling.prompters import CodeLlamaFunctionCallingPrompter
+
+# Define a function and models
+functions = [
+    {
+        "name": "get_current_weather",
+        "description": "Get the current weather in a given location",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "location": {
+                    "type": "string",
+                    "description": "The city and state, e.g. San Francisco, CA",
+                    "maxLength": 20,
+                },
+                "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
+            },
+            "required": ["location"],
+        },
+    }
+]
+
+# Initialize the generator with the Hugging Face model and our functions
+generator = Generator(
+    functions,
+    LlamaModel("codellama-function-calling-6320-7b-instruct.gguf.q2_k.bin"),
+    CodeLlamaFunctionCallingPrompter(),
+)
+
+# Generate text using a prompt
+function_call = generator.generate(
+    "What is the weather like today in Brooklyn?", suffix="\n"
+)
+print(function_call)
+```
+
+</details>
