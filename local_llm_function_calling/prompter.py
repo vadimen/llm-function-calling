@@ -1,7 +1,7 @@
 """Prompter protocol for function calling with open source models"""
 
 import json
-from typing import Literal, NotRequired, Protocol, TypeVar, TypedDict
+from typing import Literal, NotRequired, Protocol, TypeVar, TypedDict, runtime_checkable
 
 JsonType = str | int | float | bool | None | list["JsonType"] | dict[str, "JsonType"]
 
@@ -54,6 +54,64 @@ class TextPrompter(Protocol[PrefixType_co, PromptType_contra]):
             functions (list[FunctionType]): The functions to choose from
             function_to_call (str | None): The function to call.
                 When None, the prompt should be to select the function to call.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
+class ShouldCallResponse(TypedDict):
+    """Response from should_call"""
+
+    if_should_call: list[str]
+    if_not_should_call: list[str]
+
+
+@runtime_checkable
+class TextPrompterWithNonFunctionResponse(Protocol[PrefixType_co, PromptType_contra]):
+    """Prompter protocol for function calling with open source models
+    that can return non-function responses"""
+
+    def prompt(
+        self,
+        prompt: PromptType_contra,
+        functions: list[FunctionType],
+        function_to_call: str | None = None,
+    ) -> PrefixType_co:
+        """Prompt the model to generate a function call
+
+        If function_to_call is None, then the prompt's aim should be to select
+        the correct function to call. If function_to_call is not None, then the
+        prompt's aim should be to generate the correct arguments for the
+        function.
+
+        Args:
+            prompt: The natural language part of the prompt
+            functions (list[FunctionType]): The functions to choose from
+            function_to_call (str | None): The function to call.
+                When None, the prompt should be to select the function to call.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    def should_call_prompt(
+        self, prompt: PromptType_contra, functions: list[FunctionType]
+    ) -> tuple[PrefixType_co, ShouldCallResponse]:
+        """Check if a function should be called
+
+        Args:
+            prompt: The prompt to check
+            functions (list[FunctionType]): The functions to choose from
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    def natural_language_prompt(
+        self,
+        prompt: PromptType_contra,
+        functions: list[FunctionType],
+    ) -> PrefixType_co:
+        """Prompt the model to generate a natural language response
+
+        Args:
+            prompt: The natural language part of the prompt
+            functions (list[FunctionType]): The functions to choose from
         """
         ...  # pylint: disable=unnecessary-ellipsis
 

@@ -7,7 +7,7 @@ import json
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..prompter import FunctionType
+    from ..prompter import FunctionType, ShouldCallResponse
 
 
 class CodeLlamaFunctionCallingPrompter:
@@ -38,5 +38,43 @@ class CodeLlamaFunctionCallingPrompter:
         return [
             1,
             f"[INST] <<SYS>>\n<function>Available functions:\n{functions_summary}"
-            f"\n<<SYS>>\n\n{prompt} [/INST]<function>{f_start}".encode("utf-8"),
+            f"\n<</SYS>>\n\n{prompt} [/INST]<function>{f_start}".encode("utf-8"),
         ]
+
+    def should_call_prompt(
+        self, prompt: str, functions: list[FunctionType]
+    ) -> tuple[list[bytes | int], ShouldCallResponse]:
+        """Check if a function should be called
+
+        Args:
+            prompt (str): The prompt to check
+            functions (list[FunctionType]): The functions to choose from
+
+        Returns:
+            tuple[str, ShouldCallResponse]: The function to call and the response
+        """
+        functions_summary = "\n".join(
+            f"<function>{json.dumps(f, indent=4)}" for f in functions
+        )
+        return (
+            [
+                1,
+                f"[INST] <<SYS>>\n<function>Available functions:\n{functions_summary}\n"
+                f"<</SYS>>\n\n{prompt} [/INST]".encode("utf-8"),
+            ],
+            {"if_should_call": ["<function>"], "if_not_should_call": [" "]},
+        )
+
+    def natural_language_prompt(
+        self, prompt: str, functions: list[FunctionType]
+    ) -> list[bytes | int]:
+        """Prompt the model to generate a natural language response
+
+        Args:
+            prompt (str): The natural language part of the prompt
+            functions (list[FunctionType]): The functions to choose from
+
+        Returns:
+            list[bytes | int]: The natural language prompt
+        """
+        return self.should_call_prompt(prompt, functions)[0]

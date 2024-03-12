@@ -1,6 +1,6 @@
 """An abstract definition of a model."""
 from __future__ import annotations
-from typing import Any, Iterator, Protocol, TYPE_CHECKING, TypeVar
+from typing import Any, Iterator, Protocol, TYPE_CHECKING, TypeVar, runtime_checkable
 
 if TYPE_CHECKING:
     from ..prompter import TextPrompter
@@ -50,4 +50,33 @@ class Model(Protocol[PrefixType]):
 
     def default_prompter(self) -> TextPrompter[PrefixType, Any]:
         """Get the default prompter for this model"""
+        ...
+
+
+@runtime_checkable
+class ModelWithNaturalLanguageResponses(Protocol[PrefixType]):
+    """A container for a generic language model
+    that can return natural language responses"""
+
+    def start_generation(self, prefix: PrefixType) -> Generation:
+        """Start a new generation sequence
+
+        Args:
+            prefix (PrefixType): The generation prefix
+        """
+        ...
+
+    def default_prompter(self) -> TextPrompter[PrefixType, Any]:
+        """Get the default prompter for this model"""
+        ...
+
+    def generate_from_prompt(
+        self, prefix: PrefixType, max_new_tokens: int | None = None
+    ) -> str:
+        """Generate a response to a prompt
+
+        Args:
+            prefix (PrefixType): The prompt to generate a response to
+            max_new_tokens (int | None): The maximum number of tokens to generate
+        """
         ...

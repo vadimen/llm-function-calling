@@ -3,12 +3,17 @@ from __future__ import annotations
 from typing import Generic, Self, TYPE_CHECKING, TypeVar
 
 from .constrainer import Constrainer, EnumConstraint, JsonSchemaConstraint
+from .model import Model, ModelWithNaturalLanguageResponses
 from .model.huggingface import HuggingfaceModel
+from .prompter import (
+    FunctionCall,
+    FunctionType,
+    TextPrompter,
+    TextPrompterWithNonFunctionResponse,
+)
 
 if TYPE_CHECKING:
     from transformers import AutoModelForCausalLM, AutoTokenizer
-    from .model import Model
-    from .prompter import FunctionCall, FunctionType, TextPrompter
 
 PromptType = TypeVar("PromptType")
 PrefixType = TypeVar("PrefixType")
@@ -190,3 +195,67 @@ class Generator(Generic[PrefixType, PromptType]):
             prompt, function_name, max_new_tokens, max_length
         )
         return {"name": function_name, "parameters": arguments}
+
+    def should_call(
+        self,
+        prompt: PromptType,
+    ) -> bool:
+        """Determine if the function should be called
+
+        Args:
+            prompt (PromptType): The prompt to use
+
+        Returns:
+            bool: Whether the function should be called
+        """
+        if not isinstance(self.prompter, TextPrompterWithNonFunctionResponse):
+            raise NotImplementedError(
+                "The prompter you're using does not support non-function responses"
+            )
+        prefix, responses = self.prompter.should_call_prompt(prompt, self.functions)
+        generated = self._generate_allowed_in_enum(
+            prefix, responses["if_should_call"] + responses["if_not_should_call"]
+        )
+        return generated in responses["if_should_call"]
+
+    def natural_language(
+        self,
+        prompt: PromptType,
+        max_new_tokens: int | None = None,
+    ) -> str:
+        """Generate a natural language response
+
+        Args:
+            prompt (PromptType): The prompt to use
+            max_new_tokens (int | None): The maximum number of tokens to generate
+
+        Returns:
+            str: The natural language response
+        """
+        if not isinstance(self.model, ModelWithNaturalLanguageResponses):
+            raise NotImplementedError(
+                "The model you're using does not support natural language responses"
+            )
+        if not isinstance(self.prompter, TextPrompterWithNonFunctionResponse):
+            raise NotImplementedError(
+                "The prompter you're using does not support non-function responses"
+            )
+        return self.model.generate_from_prompt(
+            self.prompter.natural_language_prompt(prompt, self.functions),
+            max_new_tokens,
+        )
+
+    def respond(
+        self, prompt: PromptType, max_new_tokens: int | None = None
+    ) -> str | FunctionCall:
+        """Generate a response
+
+        Args:
+            prompt (PromptType): The prompt to use
+
+        Returns:
+            str | FunctionCall: The response
+        """
+        if self.should_call(prompt):
+            return self.generate(prompt, max_new_tokens=max_new_tokens)
+        return self.natural_language(prompt, max_new_tokens)

@@ -417,3 +417,46 @@ class LlamaModel:
             LlamaInstructPrompter: The default prompter for this model
         """
         return LlamaInstructPrompter()
+
+    def generate_from_prompt(
+        self,
+        prefix: list[bytes | int],
+        max_tokens: int | None = None,
+    ) -> str:
+        """Generate a string from a prompt
+
+        Args:
+            prefix (list[int]): The prompt to generate a response to
+            max_tokens (int | None): The maximum number of tokens to generate
+
+        Returns:
+            str: The generated value
+        """
+        prompt = sum(
+            (
+                [item] if isinstance(item, int) else self.model.tokenize(item, False)
+                for item in prefix
+            ),
+            [],
+        )
+        first_token_logits = next(self.model.generate_logits(prompt))
+        tokens = [1]
+        # This magic is to enforce the first character to be a space
+        for token_id, _ in sorted(
+            enumerate(first_token_logits), key=lambda item: item[1], reverse=True
+        ):
+            if (
+                self.model.detokenize([token_id])
+                .decode("utf-8", errors="ignore")
+                .startswith(" ")
+            ):
+                tokens.append(token_id)
+                prompt.append(token_id)
+                break
+        for i, token in enumerate(self.model.generate(prompt)):
+            if token == self.model.token_eos():
+                break
+            tokens.append(token)
+            if max_tokens is not None and i >= max_tokens:
+                break
+        return self.model.detokenize(tokens).decode("utf-8")
