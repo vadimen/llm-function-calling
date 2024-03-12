@@ -1,6 +1,6 @@
 """A generator for the responses to a function call"""
 from __future__ import annotations
-from typing import Generic, TYPE_CHECKING, TypeVar
+from typing import Generic, Self, TYPE_CHECKING, TypeVar
 
 from .constrainer import Constrainer, EnumConstraint, JsonSchemaConstraint
 from .model.huggingface import HuggingfaceModel
@@ -42,7 +42,7 @@ class Generator(Generic[PrefixType, PromptType]):
 
     @classmethod
     def hf(
-        cls: type[Generator[str, PromptType]],
+        cls: type[Self],
         functions: list[FunctionType],
         model: AutoModelForCausalLM | str,
         tokenizer: AutoTokenizer | str | None = None,

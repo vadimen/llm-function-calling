@@ -67,6 +67,8 @@ print(function_call)
 
 The [meta's llama2 family of models](https://ai.meta.com/llama/) (especially codellama) are so much more suited for this task than most other open source models. Far from everyone has the resources required to run the models as is though. One of the solutions is quantization. Quantized models are smaller and require way fewer resources, but produce lower quality results. This tool supports [llama.cpp](https://github.com/ggerganov/llama.cpp), which allows you to run these quantized models.
 
+Important note: this project uses a thin wrapper aroung the default llama.cpp python bindings that allow you to more easily extract the logits of each token. You can access it at [LogitLlama](local_llm_function_calling.model.llama.LogitLlama).
+
 To use llama.cpp, you have to install the project with:
 
 ```sh
