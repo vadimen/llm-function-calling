@@ -57,7 +57,7 @@ print(function_call)
 ```json
 {
   "name": "get_current_weather",
-  "parameters": "{\n    \"location\": \"{{{{{{{{{{{{{{{{{{{{\"\n}"
+  "arguments": "{\n    \"location\": \"{{{{{{{{{{{{{{{{{{{{\"\n}"
 }
 ```
 

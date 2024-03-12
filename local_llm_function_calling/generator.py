@@ -194,7 +194,7 @@ class Generator(Generic[PrefixType, PromptType]):
         arguments = self.generate_arguments(
             prompt, function_name, max_new_tokens, max_length
         )
-        return {"name": function_name, "parameters": arguments}
+        return {"name": function_name, "arguments": arguments}
 
     def should_call(
         self,

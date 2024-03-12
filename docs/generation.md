@@ -62,7 +62,7 @@ function_call = generator.generate("What is the weather like today in Brooklyn?"
 ```json
 {
   "name": "get_current_weather",
-  "parameters": "{\n    \"location\": \"{{{{{{{{{{{{{{{{{{{{\"\n}"
+  "arguments": "{\n    \"location\": \"{{{{{{{{{{{{{{{{{{{{\"\n}"
 }
 ```
 
