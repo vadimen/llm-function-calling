@@ -1,5 +1,39 @@
 # [Purchase this API at DuckHosting](https://www.duckhosting.lol/)
 
+# [Usage example:]
+=================
+USER_QUERY_1:
+I never was in hawai during summer, I wonder how it feels?
+
+LLM_RESPONSE_1:
+Function: get_weather
+Arguments: {'location': 'Hawaii', 'season': 'summer'}
+=================
+USER_QUERY_2:
+I never bought rivian stocks from revolut, may ask some more infor about them ? 
+
+LLM_RESPONSE_2:
+Function: get_stock_price
+Arguments: {'stock_name': 'RIVN', 'broker_name': 'Revolut'}
+=================
+USER_QUERY_3:
+I was once in hawai during summer and was buying rivian stocks there using revolut, I wonder how is it all now ?
+
+LLM_RESPONSE_3:
+Function: get_weather
+Arguments: {'location': 'Hawaii', 'season': 'summer'}
+
+Function: get_stock_price
+Arguments: {'stock_name': 'Rivian', 'broker_name': 'Revolut'}
+=================
+USER_QUERY_4:
+I would like to eat an apple pie
+
+LLM_RESPONSE_4:
+Error in LLMHelper.generate_with_constraint: Failed to generate valid response after 3 attempts
+Error: Failed to generate valid response after 3 attempts
+=================
+
 Told llm to make a short description of parent repo and 
 then recreated it from description. Just couldn't understand anything from that documentation.
 
