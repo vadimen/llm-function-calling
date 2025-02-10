@@ -1,61 +1,76 @@
-from function_calling import process_function_call
-from deep_infra_client import DeepInfraClient
-from dotenv import load_dotenv
+import asyncio
+from .function_calling import process_function_call
+from .llm_helper import LLMHelper
 import os
+from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
-API_KEY = os.getenv("DEEP_INFRA")
 
-if not API_KEY:
-    raise ValueError("DEEP_INFRA API key not found in .env file")
-
-def get_weather(location: str) -> str:
-    return f"The weather in {location} is sunny"
-
-# Example prompt to show the user what kind of questions they can ask
-EXAMPLE_PROMPTS = [
-    "What's the weather in Paris?",
-    "Tell me the weather in Tokyo",
-    "How's the weather in New York?",
-    "Check weather London"
-]
-
-def main():
+async def main():
     functions = [{
         "name": "get_weather",
-        "description": "Get weather in a location",
+        "description": "Get weather in a location for a specific season",
         "parameters": {
             "type": "object",
             "properties": {
                 "location": {
                     "type": "string",
                     "description": "City name"
+                },
+                "season": {
+                    "type": "string",
+                    "description": "Season of the year (spring, summer, fall, winter, or current)",
+                    "enum": ["spring", "summer", "fall", "winter", "current"]
                 }
             },
             "required": ["location"]
         }
+    },
+    {
+        "name": "get_stock_price",
+        "description": "Get stock price from a specific broker",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "stock_name": {
+                    "type": "string",
+                    "description": "Stock symbol or name"
+                },
+                "broker_name": {
+                    "type": "string",
+                    "description": "Name of the broker"
+                }
+            },
+            "required": ["stock_name", "broker_name"]
+        }
     }]
 
-    client = DeepInfraClient(API_KEY)
-    
-    print("\nExample questions you can ask:")
-    for example in EXAMPLE_PROMPTS:
-        print(f"- {example}")
-    print()
+    llm = LLMHelper()
     
     while True:
-        user_input = input("Ask about weather (or 'quit' to exit): ")
+        user_input = input("Ask about weather or stocks (or 'quit' to exit): ")
         if user_input.lower() == 'quit':
             break
             
         try:
-            function_call = process_function_call(client, user_input, functions)
-            if function_call["name"] == "get_weather":
-                result = get_weather(**function_call["arguments"])
-                print(result)
+            completion_params = {
+                "provider": "deepinfra",
+                "llm_name": "deepseek-ai/DeepSeek-V3",
+                "temperature": 0.7,
+                "max_new_tokens": 2048,
+                "top_p": 0.9
+            }
+            
+            function_calls = await process_function_call(llm, user_input, functions, completion_params)
+            if function_calls is None:
+                print("\nNo known function calls needed for this request.")
+            else:
+                for call in function_calls:
+                    print(f"\nFunction: {call['name']}")
+                    print(f"Arguments: {call['arguments']}")
         except Exception as e:
             print(f"Error: {e}")
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

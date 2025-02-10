@@ -1,23 +1,25 @@
 import json
 from typing import List, Dict, Any
-from deep_infra_client import DeepInfraClient
+from .llm_helper import LLMHelper
 
 def create_function_selection_prompt(user_input: str, functions: List[Dict]) -> List[Dict[str, str]]:
     functions_summary = "\n".join(
         f"- {f['name']}: {f['description']}" for f in functions
     )
     
-    # Adding a comment to explain the few-shot learning format
     return [
-        {"role": "system", "content": """You are a helpful assistant that selects the most appropriate function to call.
-Your task is to return ONLY the function name that best matches the user's request.
+        {"role": "system", "content": """You are a helpful assistant that selects the most appropriate functions to call.
+Your task is to return the function names that best match the user's request, separated by commas if multiple functions are needed.
+If none of the available functions are suitable for the request, respond with 'no_need_to_call_any_known_function'.
 Do not include any other text or explanation in your response."""},
         {"role": "system", "content": f"Available functions:\n{functions_summary}"},
-        # Example interaction to demonstrate desired behavior
+        # Single function example
         {"role": "user", "content": "What's the weather in Paris?"},
-        {"role": "assistant", "content": "get_weather"},  # Example of correct response format
-        # Actual user query
-        {"role": "user", "content": user_input}
+        {"role": "assistant", "content": "get_weather"},
+        # Multiple functions example
+        {"role": "user", "content": "What's the weather in Paris and the stock price for AAPL?"},
+        {"role": "assistant", "content": "get_weather,get_stock_price"},
+                {"role": "user", "content": user_input}
     ]
 
 def create_arguments_prompt(user_input: str, function_name: str, functions: List[Dict]) -> List[Dict[str, str]]:
@@ -51,6 +53,26 @@ class EnumConstraint:
         # is_complete: always True since we only need exact matches
         return text in self.valid_values, True
 
+class MultiEnumConstraint:
+    """
+    Validates that the model output is a comma-separated list of allowed values or no_need_to_call_any_known_function.
+    Returns (is_valid, is_complete) tuple.
+    """
+    def __init__(self, valid_values: List[str]):
+        self.valid_values = valid_values
+    
+    def __call__(self, text: str) -> tuple[bool, bool]:
+        text = text.strip()
+        if not text:
+            return False, False
+            
+        if text == "no_need_to_call_any_known_function":
+            return True, True
+            
+        functions = [f.strip() for f in text.split(',')]
+        is_valid = all(f in self.valid_values for f in functions)
+        return is_valid, True
+
 class JsonSchemaConstraint:
     """
     Validates that the model output is valid JSON matching the schema.
@@ -75,26 +97,44 @@ class JsonSchemaConstraint:
             # JSON is invalid, but might be incomplete
             return False, False
 
-def process_function_call(client: DeepInfraClient, user_input: str, functions: List[Dict]) -> Dict:
-    # 1. Select function
+async def process_function_call(client: LLMHelper, user_input: str, functions: List[Dict], completion_params: Dict) -> List[Dict] | None:
+    # 1. Select functions
     messages = create_function_selection_prompt(user_input, functions)
-    function_name = client.generate_with_constraint(
-        messages,
-        EnumConstraint([f["name"] for f in functions])
+    function_response = await client.generate_with_constraint(
+        model=completion_params["llm_name"],
+        messages=messages,
+        constraint=MultiEnumConstraint([f["name"] for f in functions]),
+        provider=completion_params.get('provider', 'deepinfra'),
+        temperature=completion_params.get('temperature', 0.1),
+        max_attempts=3
     )
 
-    # 2. Generate arguments
-    messages = create_arguments_prompt(user_input, function_name, functions)
+    if function_response.strip() == "no_need_to_call_any_known_function":
+        return None
 
-    print("=================")
-    print("messages", messages)
-    print("=================")
-    arguments = client.generate_with_constraint(
-        messages,
-        JsonSchemaConstraint(next(f for f in functions if f["name"] == function_name)["parameters"])
-    )
+    function_names = [name.strip() for name in function_response.split(',')]
+    
+    # Validate function names
+    valid_functions = [f["name"] for f in functions]
+    for function_name in function_names:
+        if function_name not in valid_functions:
+            raise ValueError(f"Invalid function name '{function_name}'. Must be one of: {valid_functions}")
 
-    return {
-        "name": function_name,
-        "arguments": json.loads(arguments)
-    }
+    # 2. Generate arguments for each function
+    result = []
+    for function_name in function_names:
+        messages = create_arguments_prompt(user_input, function_name, functions)
+        arguments_response = await client.generate_with_constraint(
+            model=completion_params["llm_name"],
+            messages=messages,
+            constraint=JsonSchemaConstraint(next(f for f in functions if f["name"] == function_name)["parameters"]),
+            temperature=completion_params.get('temperature', 0.1),
+            max_attempts=3
+        )
+
+        result.append({
+            "name": function_name,
+            "arguments": json.loads(arguments_response)
+        })
+
+    return result
