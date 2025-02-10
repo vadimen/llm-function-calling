@@ -1,38 +1,66 @@
 # [Purchase this API at DuckHosting](https://www.duckhosting.lol/)
 
-# [Usage example:]
-=================
-USER_QUERY_1:
-I never was in hawai during summer, I wonder how it feels?
+## Usage Examples
 
-LLM_RESPONSE_1:
-Function: get_weather
-Arguments: {'location': 'Hawaii', 'season': 'summer'}
-=================
-USER_QUERY_2:
-I never bought rivian stocks from revolut, may ask some more infor about them ? 
+### Example 1: Weather Query
+**User:** I never was in hawaii during summer, I wonder how it feels?
 
-LLM_RESPONSE_2:
-Function: get_stock_price
-Arguments: {'stock_name': 'RIVN', 'broker_name': 'Revolut'}
-=================
-USER_QUERY_3:
-I was once in hawai during summer and was buying rivian stocks there using revolut, I wonder how is it all now ?
+**Response:**
+```json
+{
+    "function": "get_weather",
+    "arguments": {
+        "location": "Hawaii",
+        "season": "summer"
+    }
+}
+```
 
-LLM_RESPONSE_3:
-Function: get_weather
-Arguments: {'location': 'Hawaii', 'season': 'summer'}
+### Example 2: Stock Query
+**User:** I never bought rivian stocks from revolut, may ask some more info about them?
 
-Function: get_stock_price
-Arguments: {'stock_name': 'Rivian', 'broker_name': 'Revolut'}
-=================
-USER_QUERY_4:
-I would like to eat an apple pie
+**Response:**
+```json
+{
+    "function": "get_stock_price",
+    "arguments": {
+        "stock_name": "RIVN",
+        "broker_name": "Revolut"
+    }
+}
+```
 
-LLM_RESPONSE_4:
+### Example 3: Multiple Functions
+**User:** I was once in hawaii during summer and was buying rivian stocks there using revolut, I wonder how is it all now?
+
+**Response:**
+```json
+[
+    {
+        "function": "get_weather",
+        "arguments": {
+            "location": "Hawaii",
+            "season": "summer"
+        }
+    },
+    {
+        "function": "get_stock_price",
+        "arguments": {
+            "stock_name": "Rivian",
+            "broker_name": "Revolut"
+        }
+    }
+]
+```
+
+### Example 4: Invalid Query
+**User:** I would like to eat an apple pie
+
+**Response:**
+```
 Error in LLMHelper.generate_with_constraint: Failed to generate valid response after 3 attempts
 Error: Failed to generate valid response after 3 attempts
-=================
+```
 
 Told llm to make a short description of parent repo and 
 then recreated it from description. Just couldn't understand anything from that documentation.
