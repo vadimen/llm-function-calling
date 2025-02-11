@@ -1,4 +1,4 @@
-# [Purchase this API at DuckHosting](https://www.duckhosting.lol/)
+# [This API is available at DuckHosting.lol](https://www.duckhosting.lol/)
 
 ## Usage Examples
 
