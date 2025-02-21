@@ -1,5 +1,5 @@
 # [This API is available at DuckHosting.lol](https://www.duckhosting.lol/)
-# [Discord for Support](https://discord.com/invite/NYpwUh7KNS)
+# [Discord for Support](https://discord.com/invite/FK8NXAzhSE)
 
 ## Usage Examples
 
