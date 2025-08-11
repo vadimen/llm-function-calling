@@ -1,4 +1,4 @@
-# [This API is available at DuckHosting.lol](https://www.duckhosting.lol/)
+# [This API is available at deadlockhosting.com](https://www.deadlockhosting.com/)
 # [Discord for Support](https://discord.gg/RhXgJrYTQu)
 
 ## Usage Examples
